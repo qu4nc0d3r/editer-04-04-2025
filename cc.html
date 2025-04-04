@@ -365,7 +365,7 @@ function getToken(formData) {
             tokenXHR.addEventListener("error", handleError);
             tokenXHR.addEventListener("abort", handleAbort);
 
-            tokenXHR.open("POST", "/v1/payments/token"); // Should the form be able to GET? Or act on a different URL?
+            tokenXHR.open("POST", "https://securepay.svcs.endurance.com/v1/payments/token"); // Should the form be able to GET? Or act on a different URL?
             tokenXHR.setRequestHeader("Content-Type", "application/json");
 
             tokenXHR.send(JSON.stringify(data));
