@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>SecurePay</title>
+</head>
+<body>
+    <form action="/nowhere" id="securepay-form" class="securepay-form">
+        <input type="hidden" name="method" value="CREDITCARD">
+        <input type="hidden" name="tokenType" value="MULTI">
+        <input type="hidden" name="clientId" value="">
+        <div class="input cc-number" id="block-cc-number" >
+            <label class="input__label" for="cardNumber">
+                <span class="input__label-content">Card Number</span>
+            </label>
+            <input class="input__field" name="cardNumber" id="cardNumber" type="text" maxlength="19" autocomplete="off" required />
+        </div>
+
+        <div class="input cc-exp-month" id="block-cc-exp-month">
+            <label class="input__label" for="cardExpiryMonth">
+                <span class="input__label-content">Exp. Month</span>
+            </label>
+            <select class="input__field" name="cardExpiryMonth" id="cardExpiryMonth" autocomplete="off" required>
+                <option value="01">01</option>
+                <option value="02">02</option>
+                <option value="03">03</option>
+                <option value="04">04</option>
+                <option value="05">05</option>
+                <option value="06">06</option>
+                <option value="07">07</option>
+                <option value="08">08</option>
+                <option value="09">09</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
+            </select>
+        </div>
+
+        <div class="input cc-exp-year" id="block-cc-exp-year">
+            <label class="input__label" for="cardExpiryYear">
+                <span class="input__label-content">Exp. Year</span>
+            </label>
+            <select class="input__field" name="cardExpiryYear" id="cardExpiryYear" autocomplete="off" required>
+            </select>
+        </div>
+    </form>
+
+    <script src="/static/js/securepay.js"
+            integrity="sha384-Atq1uFae2y60feDd8yLxL/xni4hMSjg4ZTdQzE5HAe+grmlZDtH6Qg5vNlZtv0VE"
+            crossorigin="anonymous"></script>
+
+</body>
+</html>
