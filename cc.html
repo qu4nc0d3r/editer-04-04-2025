@@ -1,28 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>SecurePay</title>
-</head>
+<link href="https://securepay.svcs.endurance.com/payment/css/bluehost/create-cc-iframe.css" rel="stylesheet"></head>
 <body>
     <form action="/nowhere" id="securepay-form" class="securepay-form">
         <input type="hidden" name="method" value="CREDITCARD">
         <input type="hidden" name="tokenType" value="MULTI">
-        <input type="hidden" name="clientId" value="">
-        <div class="input cc-number" id="block-cc-number" >
+        <input type="hidden" name="clientId" value="109005">
+        <div class="input cc-number" id="block-cc-number">
             <label class="input__label" for="cardNumber">
                 <span class="input__label-content">Card Number</span>
             </label>
-            <input class="input__field" name="cardNumber" id="cardNumber" type="text" maxlength="19" autocomplete="off" required />
+            <input class="input__field" name="cardNumber" id="cardNumber" type="text" maxlength="19" autocomplete="off" required="">
         </div>
+
 
         <div class="input cc-exp-month" id="block-cc-exp-month">
             <label class="input__label" for="cardExpiryMonth">
                 <span class="input__label-content">Exp. Month</span>
             </label>
-            <select class="input__field" name="cardExpiryMonth" id="cardExpiryMonth" autocomplete="off" required>
+            <select class="input__field" name="cardExpiryMonth" id="cardExpiryMonth" autocomplete="off" required="">
                 <option value="01">01</option>
                 <option value="02">02</option>
                 <option value="03">03</option>
@@ -42,14 +42,13 @@
             <label class="input__label" for="cardExpiryYear">
                 <span class="input__label-content">Exp. Year</span>
             </label>
-            <select class="input__field" name="cardExpiryYear" id="cardExpiryYear" autocomplete="off" required>
-            </select>
+            <select class="input__field" name="cardExpiryYear" id="cardExpiryYear" autocomplete="off" required="">
+            <option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option><option value="32">32</option><option value="33">33</option><option value="34">34</option><option value="35">35</option><option value="36">36</option><option value="37">37</option><option value="38">38</option><option value="39">39</option><option value="40">40</option><option value="41">41</option><option value="42">42</option><option value="43">43</option></select>
         </div>
     </form>
 
-    <script src="/static/js/securepay.js"
-            integrity="sha384-Atq1uFae2y60feDd8yLxL/xni4hMSjg4ZTdQzE5HAe+grmlZDtH6Qg5vNlZtv0VE"
-            crossorigin="anonymous"></script>
+    <script src="https://securepay.svcs.endurance.com/static/js/securepay.js" integrity="sha384-Atq1uFae2y60feDd8yLxL/xni4hMSjg4ZTdQzE5HAe+grmlZDtH6Qg5vNlZtv0VE" crossorigin="anonymous"></script>
 
-</body>
-</html>
+
+
+</body></html>
