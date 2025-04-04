@@ -47,7 +47,586 @@
         </div>
     </form>
 
-    <script src="https://securepay.svcs.endurance.com/static/js/securepay.js" integrity="sha384-Atq1uFae2y60feDd8yLxL/xni4hMSjg4ZTdQzE5HAe+grmlZDtH6Qg5vNlZtv0VE" crossorigin="anonymous"></script>
+    <script>
+
+function isValidCreditCard(number) {
+    number = number.replace(/[-\s]/g,"");
+
+    // NOTE: We're not going to lint this open source thing
+    /* eslint-disable */
+    var luhnChk = (function (arr) {
+        return function (ccNum) {
+            var len = ccNum.length,
+                bit = 1,
+                sum = 0,
+                val;
+
+            while (len) {
+                val = parseInt(ccNum.charAt(--len), 10);
+                sum += (bit ^= 1) ? arr[val] : val;
+            }
+
+            return sum && sum % 10 === 0;
+        };
+    }([0, 2, 4, 6, 8, 1, 3, 5, 7, 9])),
+        msg,
+        key,
+        valid;
+    /*eslint-enable */
+
+   if (!number) {
+      msg = "Credit card number is required";
+      key = "payment.creditcard.number.required";
+      valid = false;
+   } else if (!luhnChk(number)) {
+      msg = "Credit card number is invalid";
+      key = "payment.creditcard.number.invalid";
+      valid = false;
+    } else {
+      msg = "";
+      key = "payment.creditcard.number.required";
+      valid = true;
+    }
+    return {
+        "valid": valid,
+        "field": "creditCard.cardNumber",
+        "key": key,
+        "message": msg
+    };
+}
+
+
+function isWhitelisted(host) {
+    var list = [
+        "homestead.com",
+        "roving.com",
+        "constantcontact.com",
+        "sitebuilder.com",
+        "websitebuilder.com",
+        "sitey.com",
+        "sitelio.com",
+        "gator.com",
+        "domain.com",
+        "mydomain.com",
+        "dotster.com",
+        "ipage.com",
+        "fatcow.com",
+        "ipower.com",
+        "verio.com",
+        "bizland.com",
+        "bluedomino.com",
+        "domainhost.com",
+        "dot5hosting.com",
+        "easycgi.com",
+        "ehost.com",
+        "entryhost.com",
+        "freeyellow.com",
+        "globat.com",
+        "hostcentric.com",
+        "hostyoursite.com",
+        "hypermart.com",
+        "imoutdoorshosting.com",
+        "networkswebhosting.com",
+        "poweb.com",
+        "purehost.com",
+        "readyhosting.com",
+        "spry.com",
+        "startlogic.com",
+        "usanethosting.com",
+        "virtualavenue.com",
+        "vpslink.com",
+        "webhost4life.com",
+        "accountsupport.com",
+        "xeran.com",
+        "yourwebhosting.com",
+        "netfirms.com",
+        "hostgator.com.br",
+        "hostgator.cl",
+        "hostgator.co",
+        "hostgator.io",
+        "hostgator.mx",
+        "register.com",
+        "namesecure.com",
+        "networksolutions.com",
+        "web.com"
+    ];
+
+    var index = 0;
+	while (index < list.length) {
+    		console.log(list[index]);
+    		if ( host.indexOf(list[index]) > -1){
+    			return false;
+    		}
+    		index++;
+	}
+
+    return true;
+}
+
+function formFieldExists(fieldName){
+	if (document.getElementById(fieldName) != null
+	  && document.getElementById(fieldName) != "undefined") {
+		return true;
+	}
+	return false;
+}
+
+function getFormData(form) {
+    // Get all fields from our form; inputs, textareas, selects -- did I miss anything?
+    var fields = form.querySelectorAll("input, textarea, select"),
+        result = {};
+
+    // Filter out invalid fields, defined as fields that don't have names or values
+    fields = [].filter.call(fields, function isValid(field) {
+        return  (typeof field.name !== "undefined") &&  // Maybe `field.data.securepay` instead?
+                (typeof field.value !== "undefined");   // This will allow empty strings
+    });
+
+    // Build the result object
+    fields.forEach(function addProperty(field) {
+        result[field.name] = field.value;
+    });
+
+    return result;
+}
+
+function getValidationForTokenRequestData(tokenRequestData) {
+    var field,
+        validatorResponse,
+        genericValidationError = {
+            "field": null,
+            "key": "internal.system.error",
+            "message": "An internal system error has occurred"
+        },
+        requiredFields = {
+            "clientId": {
+                "type": "string",
+                "name": "client ID"
+            },
+            "method": {
+                "type": "string",
+                "name": "payment method"
+            },
+            "cardHolderName": {
+                "type": "string",
+                "name": "card holder name",
+                "validator": function validateSecureCode(string) {
+                		var valid = true;
+					if (document.getElementById("cardHolderName") != null && document.getElementById("cardHolderName") != "undefined"){
+						if (document.getElementById("cardHolderName").value == null || document.getElementById("cardHolderName").value.trim() == "") {
+							valid = false;
+						}
+					}
+                    return {
+                        "valid": valid,
+                        "field": "creditCard.cardHolderName",
+                        "key": "payment.creditcard.name.required",
+                        "message": valid ? "" : "Credit card holder name is required"
+                    };
+                }
+            },
+            "cardNumber": {
+                "type": "string",
+                "name": "card number",
+                "validator": isValidCreditCard
+            },
+            "cardSecureCode": {
+                "type": "string",
+                "name": "card security code",
+                "validator": function validateSecureCode(string) {
+                	var valid = true;
+					if (document.getElementById("cardSecureCode") != null && document.getElementById("cardSecureCode") != "undefined"){
+                    	valid = /^\d{3,4}$/.test(string);
+					}
+                    return {
+                        "valid": valid,
+                        "field": "creditCard.cardSecureCode",
+                        "key": "payment.creditcard.securecode.invalid",
+                        "message": valid ? "" : "Credit card secure code is invalid"
+                    };
+                }
+            },
+            "cardExpiryMonth": {
+                "type": "string",
+                "name": "card expiration month",
+                "validator": function validateExpiryMonth(month) {
+                    month = parseInt(month, 10);
+
+                    var valid = (month >= 1 && month <= 12);
+
+                    return {
+                        "valid": valid,
+                        "field": "creditCard.cardExpiration",
+                        "key": "payment.creditcard.expiration.invalid",
+                        "message": valid ? "" : "Credit card expiration is invalid"
+                    };
+                }
+            },
+            "cardExpiryYear": {
+                "type": "string",
+                "name": "card expiration year",
+                "validator": function validateExpiryYear(year) {
+                    year = parseInt(year, 10);
+
+                    var valid = (year >= 0 && year <= 99);
+					
+					if (valid && ve == '1') {
+						valid = isExpirationValid(year);
+					}
+                    return {
+                        "valid": valid,
+                        "field": "creditCard.cardExpiryMonth",
+                        "key": "payment.creditcard.expiration.invalid",
+                        "message": valid ? "" : "Credit card expiration is invalid"
+                    };
+                }
+            }
+        };
+
+    if (typeof tokenRequestData !== "object") {
+        return [ genericValidationError ];
+    }
+
+    for (field in requiredFields) {
+    	if ((field != "cardSecureCode"
+    				|| (field == "cardSecureCode" && (document.getElementById("cardSecureCode") != null && document.getElementById("cardSecureCode") != "undefined")))
+    		&& (field != "cardHolderName"
+    		|| (field == "cardHolderName" && (document.getElementById("cardHolderName") != null && document.getElementById("cardHolderName") != "undefined")))){
+
+	        if (requiredFields.hasOwnProperty(field)) {
+	            if (typeof tokenRequestData[field] !== requiredFields[field].type) {
+	                return [ genericValidationError ];
+	            } else if (typeof requiredFields[field].validator !== "undefined" && requiredFields[field].validator(tokenRequestData[field]).valid === false) {
+	                validatorResponse = requiredFields[field].validator(tokenRequestData[field]);
+	                delete validatorResponse.valid;
+	                return [ validatorResponse ];
+	            }
+	        }
+		}
+    }
+
+    return { "valid": true };
+}
+
+function postMessageToParent(messageBody, destination) {
+    var message = {
+            "securePayMessage": true,
+            "body": messageBody
+        },
+        dummyAnchor;
+
+    if (typeof destination === "undefined") {
+        destination = (document.referrer !== "" ? document.referrer : document.location.href);
+        dummyAnchor =  document.createElement("a");
+
+        dummyAnchor.href = destination;
+
+        destination = dummyAnchor.protocol + "//" + dummyAnchor.host;
+
+        if (dummyAnchor.protocol === "about:") {
+            destination = "https://debug.debug";
+        }
+    }
+
+    parent.postMessage(message, destination);
+}
+
+function getToken(formData) {
+    if (typeof formData === "undefined") {
+        formData = getFormData(document.getElementById("securepay-form"));
+    }
+
+    var validationObject = getValidationForTokenRequestData(formData),
+        tokenRequestData;
+
+    if (validationObject.constructor === Array) {
+        postMessageToParent(validationObject);
+
+        return validationObject;
+    } else {
+        tokenRequestData = {
+            "clientId": formData.clientId,
+            "method": formData.method,
+            "type": formData.tokenType,
+            "creditCard": {
+                "cardHolderName": formData.cardHolderName,
+                "cardNumber": formData.cardNumber,
+                "cardSecureCode": formData.cardSecureCode,
+                "cardExpiration": formData.cardExpiryMonth + formData.cardExpiryYear
+            }
+        };
+
+        makeTokenRequest(tokenRequestData);
+
+        function makeTokenRequest(data) {
+            var tokenXHR = new XMLHttpRequest();
+
+            tokenXHR.addEventListener("load", handleResponse);
+            tokenXHR.addEventListener("error", handleError);
+            tokenXHR.addEventListener("abort", handleAbort);
+
+            tokenXHR.open("POST", "/v1/payments/token"); // Should the form be able to GET? Or act on a different URL?
+            tokenXHR.setRequestHeader("Content-Type", "application/json");
+
+            tokenXHR.send(JSON.stringify(data));
+        }
+    }
+}
+
+function handleResponse(event) {
+    var response = event.currentTarget.responseText || "{}";
+
+    postMessageToParent(JSON.parse(response));
+}
+
+function handleError() {
+    postMessageToParent("Error communicating with server");
+}
+
+function handleAbort() {
+    postMessageToParent("Communication aborted!");
+}
+
+function useSelfHostedStyles(uri) {
+    var stylesheet = document.createElement("link");
+    stylesheet.href = "css/" + uri;
+    stylesheet.rel = "stylesheet";
+    document.head.appendChild(stylesheet);
+}
+
+function prePopulate(cardNum, expMonth, expYear) {
+    prePopulate(null, cardNum, expMonth, expYear);
+}
+
+function prePopulate(cardHolderName, cardNum, expMonth, expYear) {
+    prepopulatedData = true;
+    // Populate cardholder name
+    if(formFieldExists("cardHolderName") && cardHolderName != null) {
+        document.getElementById('cardHolderName').value = cardHolderName;
+    }
+
+    if(cardNum != null) {
+	    // Populate cardNumber
+	    document.getElementById('cardNumber').placeholder = cardNum;
+    }
+
+    // Populate exp
+    if (formFieldExists("cardExpiration") && expMonth != null && expYear != null) {
+        document.getElementById('cardExpiration').value = expMonth + '/' + expYear;
+    } else if (expMonth != null && expYear != null) {
+        document.getElementById('cardExpiryMonth').value = expMonth;
+        document.getElementById('cardExpiryYear').value = expYear;
+    }
+}
+
+function checkError(formData) {
+    if (typeof formData === "undefined") {
+        formData = getFormData(document.getElementById("securepay-form"));
+    }
+
+    var validationObject = getValidationForTokenRequestData(formData);
+
+    clearErrors();
+    if (validationObject.constructor === Array) {
+        postMessageToParent(validationObject);
+        var vo = validationObject[0];
+
+        switch(vo.field) {
+            case "creditCard.cardHolderName":
+                document.getElementById("cardHolderName").classList.add("is-error");
+                addErrorDiv(vo.message, document.querySelector("#cardHolderName"), "card_holder_name-error", "holder_name-error");
+                break;
+            case "creditCard.cardNumber":
+                document.getElementById("cardNumber").classList.add("is-error");
+                addErrorDiv(vo.message, document.querySelector("#cardNumber"), "card_number-error", "number-error");
+                break;
+            case "creditCard.cardSecureCode":
+                document.getElementById("cardSecureCode").classList.add("is-error");
+                addErrorDiv(vo.message, document.querySelector("#cardSecureCode"), "card_code-error", "code-error");
+                break;
+            case "creditCard.cardExpiryMonth":
+                document.getElementById("cardExpiryMonth").classList.add("is-error");
+                addErrorDiv(vo.message, document.querySelector("#cardExpiryMonth"), "card_month-error", "month-error");
+                break;
+            case "creditCard.cardExpiryYear":
+                document.getElementById("cardExpiryYear").classList.add("is-error");
+                addErrorDiv(vo.message, document.querySelector("#cardExpiryYear"), "card_year-error", "year-error");
+                break;
+        }
+    }else if(/\s/g.test(formData.cardNumber)) { //regex to check for whitespace
+        document.getElementById("cardNumber").classList.add("is-error");
+        addErrorDiv("Credit card number cannot contain spaces", document.querySelector("#cardNumber"), "card_number-error", "number-error");
+    }
+}
+
+function clearErrors() {
+	if (document.getElementById("cardHolderName") != null && document.getElementById("cardHolderName") != "undefined") {
+	    document.getElementById("cardHolderName").classList.remove("is-error");
+	}
+    document.getElementById("cardNumber").classList.remove("is-error");
+	if (document.getElementById("cardSecureCode") != null && document.getElementById("cardSecureCode") != "undefined") {
+	    document.getElementById("cardSecureCode").classList.remove("is-error");
+	}
+    document.getElementById("cardExpiryMonth").classList.remove("is-error");
+    document.getElementById("cardExpiryYear").classList.remove("is-error");
+
+
+    var holderNameError = document.getElementById("holder_name-error");
+    if(holderNameError) {holderNameError.parentNode.removeChild(holderNameError);}
+    var numberError = document.getElementById("number-error");
+    if(numberError) {numberError.parentNode.removeChild(numberError);}
+    var codeError = document.getElementById("code-error");
+    if(codeError) {codeError.parentNode.removeChild(codeError);}
+    var yearError = document.getElementById("year-error");
+    if(yearError) {yearError.parentNode.removeChild(yearError);}
+    var monthError = document.getElementById("month-error");
+    if(monthError) {monthError.parentNode.removeChild(monthError);}
+}
+
+function addErrorDiv(errorMessage, target, className, id) {
+    var div = document.createElement('div');
+    div.classList.add("Field-error", className);
+    div.id = id;
+    div.innerHTML = errorMessage;
+    target.parentNode.insertBefore( div, target );
+}
+
+function handleMessage(event) {
+    var functionName,
+        functionArgs,
+        message = (typeof event.data === "string") ? JSON.parse(event.data) : event.data;
+
+    if (message.securePayMessage !== true || typeof message.body.callFunction !== "object") {
+        return false;
+    }
+
+    functionName = message.body.callFunction.name;
+    functionArgs = message.body.callFunction.arguments;
+
+    switch (functionName) {
+        case "getToken":
+            getToken.apply(window, functionArgs);
+            return true;
+
+        case "useSelfHostedStyles":
+            useSelfHostedStyles.apply(window, functionArgs);
+            return true;
+
+        case "prePopulate":
+            prePopulate.apply(window, functionArgs);
+            return true;
+
+        case "checkError":
+            checkError.apply(window, functionArgs);
+            return true;
+    }
+}
+
+function isNumeric(event){
+
+   	if (event.keyCode == 13){
+	    event.preventDefault();
+		return false;
+	}
+	if (event.charCode!=0) {
+        var regex = new RegExp("^[0-9]+$");
+        var key = String.fromCharCode(!event.charCode ? event.which : event.charCode);
+        if (!regex.test(key)) {
+            event.preventDefault();
+            	return false;
+        }
+   	}
+
+   	return true;
+}
+
+function isExpirationValid() {
+  	var today = new Date();
+  	var year = parseInt(document.getElementById("cardExpiryYear").value);
+  	var month = parseInt(document.getElementById("cardExpiryMonth").value);
+  	if ((year + 2000) == today.getFullYear()){
+		if (month < (today.getMonth() + 1)){
+			return false;
+		} 
+  	} else if ((year + 2000) < today.getFullYear()){
+			return false;
+  	}
+	return true;
+}
+
+window.addEventListener("message", handleMessage);
+
+(function setClientId() {
+    var querystring = document ? document.location.search : "",
+	clientId = getUrlParameter("clientId"),
+	tokenType = getUrlParameter("tokenType");
+	ve = getUrlParameter("ve");
+
+    if (document.getElementById("securepay-form") !== null) {
+        document.getElementById("securepay-form").clientId.value = clientId;
+        if (tokenType != null && tokenType != ""){
+        	document.getElementById("securepay-form").tokenType.value = tokenType;
+		}
+    } else {
+        return false;
+    }
+
+    function getUrlParameter(name) {
+        name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+            results = regex.exec(querystring);
+        return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+    }
+}());
+
+// Exporting a module for Jest's sake
+if (typeof module !== "undefined") {
+    module.exports = {
+        getFormData : getFormData,
+        getToken : getToken,
+        getValidationForTokenRequestData : getValidationForTokenRequestData,
+        handleResponse : handleResponse,
+        handleAbort : handleAbort,
+        handleError : handleError,
+        handleMessage : handleMessage,
+        postMessageToParent : postMessageToParent,
+        useSelfHostedStyles : useSelfHostedStyles,
+        isValidCreditCard : isValidCreditCard
+    };
+}
+
+var ve;
+var current_date = new Date();
+var MM = current_date.getMonth() + 1;
+var yyyy = current_date.getFullYear();
+
+// Build the cardExpiryYear
+var selectList = document.getElementById("cardExpiryYear");
+
+// Set current year
+for (var i = 0; i <= 18; i++) {
+	var text = (yyyy + "").substring(2, 4);
+    var option = document.createElement("option");
+    option.value = text;
+    option.text = text;
+    selectList.appendChild(option);
+    yyyy++;
+}
+
+document.getElementById("cardExpiryMonth").value = MM < 10 ? "0" + MM : "" + MM;
+
+document.getElementById("cardNumber").addEventListener("keypress", function(event){
+	return isNumeric(event);
+});
+
+if (document.getElementById("cardSecureCode") != null && document.getElementById("cardSecureCode") != "undefined"){
+
+	document.getElementById("cardSecureCode").addEventListener("keypress", function(event){
+		return isNumeric(event);
+	});
+}
+        
+    </script>
 
 
 
